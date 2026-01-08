@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"
+		/>
+		<meta
+			name="description"
+			content="sTask Manager - Современный менеджер задач"
+		/>
+		<meta name="theme-color" content="#0a0e27" />
+		<title>{{ t('title') }}</title>
+
+		<!-- Favicon -->
+		<link
+			rel="icon"
+			type="image/png"
+			href="{{ url_for('static', filename='images/iconDark.png') }}"
+		/>
+		<link
+			rel="shortcut icon"
+			type="image/png"
+			href="{{ url_for('static', filename='images/iconDark.png') }}"
+		/>
+
+		<link
+			rel="stylesheet"
+			href="{{ url_for('static', filename='css/style.css') }}"
+		/>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body data-theme="{{ theme }}">
+		<div class="container">
+			<nav>
+				<a
+					href="{{ url_for('index') if current_user.is_authenticated else url_for('login') }}"
+					class="nav-brand"
+				>
+					<img
+						src="{{ url_for('static', filename='images/iconDark.png' if theme == 'dark' else 'images/iconLight.png') }}"
+						alt="Task Manager Logo"
+						class="nav-icon"
+						id="navIcon"
+					/>
+					Task Manager
+				</a>
+				<div class="nav-links">
+					<a
+						href="{{ url_for('set_lang', language='en') }}"
+						class="{{ 'active' if lang == 'en' else '' }}"
+						>EN</a
+					>
+					<span style="color: var(--text-tertiary)">|</span>
+					<a
+						href="{{ url_for('set_lang', language='ru') }}"
+						class="{{ 'active' if lang == 'ru' else '' }}"
+						>RU</a
+					>
+
+					{% if current_user.is_authenticated %}
+					<span
+						style="
+							color: var(--text-secondary);
+							margin-left: 10px;
+							font-weight: 500;
+						"
+						>👤 {{ current_user.username }}</span
+					>
+					<a href="{{ url_for('logout') }}">{{ t('logout') }}</a>
+					{% endif %}
+
+					<a
+						href="{{ url_for('toggle_theme') }}"
+						class="theme-toggle"
+						title="{{ t('theme_toggle') }}"
+						id="themeToggle"
+					>
+						{{ '🌙' if theme == 'dark' else '☀️' }}
+					</a>
+				</div>
+			</nav>
+
+			{% with messages = get_flashed_messages() %} {% if messages %} {% for
+			message in messages %}
+			<div style="padding: 1rem 2rem">
+				<div
+					style="
+						background: rgba(248, 113, 113, 0.2);
+						border: 1px solid rgba(248, 113, 113, 0.3);
+						padding: 1rem;
+						border-radius: 12px;
+						color: var(--accent-red);
+						font-weight: 500;
+					"
+				>
+					{{ t(message) }}
+				</div>
+			</div>
+			{% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
+		</div>
+
+		<script>
+			// Переключение иконки при смене темы
+			document
+				.getElementById("themeToggle")
+				?.addEventListener("click", function (e) {
+					e.preventDefault();
+
+					// Текущая тема
+					const currentTheme = document.body.getAttribute("data-theme");
+					const newTheme = currentTheme === "dark" ? "light" : "dark";
+
+					// Обновляем иконку навигации
+					const navIcon = document.getElementById("navIcon");
+					if (navIcon) {
+						const newIconPath =
+							newTheme === "dark"
+								? "{{ url_for('static', filename='images/iconDark.png') }}"
+								: "{{ url_for('static', filename='images/iconLight.png') }}";
+						navIcon.src = newIconPath;
+					}
+
+					// Переходим на страницу переключения темы
+					window.location.href = this.href;
+				});
+
+			// Устанавливаем правильную иконку при загрузке страницы
+			document.addEventListener("DOMContentLoaded", function () {
+				const currentTheme = document.body.getAttribute("data-theme");
+				const navIcon = document.getElementById("navIcon");
+
+				if (navIcon && currentTheme) {
+					const iconPath =
+						currentTheme === "dark"
+							? "{{ url_for('static', filename='images/iconDark.png') }}"
+							: "{{ url_for('static', filename='images/iconLight.png') }}";
+					navIcon.src = iconPath;
+				}
+			});
+		</script>
+	</body>
+</html>

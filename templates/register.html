@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="auth-container">
+    <h2>{{ t('register_title') }}</h2>
+    <form method="POST">
+        <input type="text" name="username" placeholder="{{ t('username') }}" required class="form-input">
+        <input type="password" name="password" placeholder="{{ t('password') }}" required minlength="8" class="form-input">
+        <small style="color: var(--text-tertiary); display: block; text-align: left; margin-bottom: 1rem; font-size: 0.85rem;">
+            Минимум 8 символов
+        </small>
+        <button type="submit" class="btn btn-primary">{{ t('register_btn') }}</button>
+    </form>
+    <p class="auth-link">
+        Уже есть аккаунт? <a href="{{ url_for('login') }}">{{ t('login_title') }}</a>
+    </p>
+</div>
+{% endblock %}
