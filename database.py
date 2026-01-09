@@ -2,7 +2,7 @@ import os
 import sqlite3
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///site.db')
-USE_POSTGRESQL = DATABASE_URL.startswith('postgresql')
+USE_POSTGRESQL = DATABASE_URL.startswith(('postgresql', 'postgres'))
 
 print(f"[Database Config]")
 print(f"  DATABASE_URL: {DATABASE_URL[:50]}...")
