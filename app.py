@@ -1,6 +1,8 @@
 import os
 import json
-import sqlite3
+import psycopg2
+import psycopg2.extras
+from database import db_handler
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, g
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -8,7 +10,6 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev_key_123')
-app.config['DATABASE'] = os.environ.get('DATABASE_PATH', 'site.db')
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'
@@ -16,58 +17,18 @@ login_manager.init_app(app)
 
 def get_db():
     if 'db' not in g:
-        g.db = sqlite3.connect(app.config['DATABASE'])
-        g.db.row_factory = sqlite3.Row
+        g.db = db_handler.get_connection()
     return g.db
 
 @app.teardown_appcontext
 def close_db(error):
     db = g.pop('db', None)
     if db is not None:
-        db.close()
+        db_handler.close(db) 
 
 def init_db():
     db = get_db()
-    db.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL
-        )
-    ''')
-    db.execute('''
-        CREATE TABLE IF NOT EXISTS tasks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT,
-            status TEXT DEFAULT 'not_started',
-            priority TEXT DEFAULT 'medium',
-            deadline TEXT,
-            user_id INTEGER NOT NULL,
-            parent_id INTEGER,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            completed_at TEXT,
-            FOREIGN KEY (user_id) REFERENCES users (id),
-            FOREIGN KEY (parent_id) REFERENCES tasks (id) ON DELETE CASCADE
-        )
-    ''')
-    db.commit()
-    
-    try:
-        cursor = db.execute("PRAGMA table_info(tasks)")
-        columns = [column[1] for column in cursor.fetchall()]
-        
-        if 'description' not in columns:
-            db.execute("ALTER TABLE tasks ADD COLUMN description TEXT")
-            print("✅ Добавлен столбец 'description'")
-        
-        if 'priority' not in columns:
-            db.execute("ALTER TABLE tasks ADD COLUMN priority TEXT DEFAULT 'medium'")
-            print("✅ Добавлен столбец 'priority'")
-        
-        db.commit()
-    except Exception as e:
-        print(f"⚠️  Миграция: {e}")
+    db_handler.init_db(db)
 
 class User(UserMixin):
     def __init__(self, id, username, password_hash):
@@ -78,9 +39,15 @@ class User(UserMixin):
 @login_manager.user_loader
 def load_user(user_id):
     db = get_db()
-    user = db.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
-    if user:
-        return User(user['id'], user['username'], user['password_hash'])
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute('SELECT * FROM users WHERE id = %s', (user_id,))
+        user = cur.fetchone()
+        cur.close()
+        if user:
+            return User(user['id'], user['username'], user['password_hash'])
+    except Exception:
+        pass
     return None
 
 def load_translations():
@@ -107,19 +74,23 @@ def inject_conf_var():
 @login_required
 def api_get_tasks():
     db = get_db()
-    tasks_rows = db.execute('''
+    cur = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    cur.execute('''
         SELECT * FROM tasks 
-        WHERE user_id = ? AND parent_id IS NULL 
+        WHERE user_id = %s AND parent_id IS NULL 
         ORDER BY created_at DESC
-    ''', (current_user.id,)).fetchall()
+    ''', (current_user.id,))
+    tasks_rows = cur.fetchall()
     
     tasks = []
     for task_row in tasks_rows:
-        subtasks_rows = db.execute('''
+        cur.execute('''
             SELECT * FROM tasks 
-            WHERE parent_id = ? 
+            WHERE parent_id = %s 
             ORDER BY id ASC
-        ''', (task_row['id'],)).fetchall()
+        ''', (task_row['id'],))
+        subtasks_rows = cur.fetchall()
         
         subtasks = [dict(row) for row in subtasks_rows]
         
@@ -138,23 +109,27 @@ def api_get_tasks():
         task_dict['computed_status'] = task_status
         tasks.append(task_dict)
     
+    cur.close()
     return jsonify(tasks)
 
 @app.route('/api/stats/<period>', methods=['GET'])
 @login_required
 def api_get_stats(period):
     db = get_db()
+    cur = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
-    all_tasks = db.execute('''
-        SELECT * FROM tasks WHERE user_id = ? AND parent_id IS NULL
-    ''', (current_user.id,)).fetchall()
+    cur.execute('''
+        SELECT * FROM tasks WHERE user_id = %s AND parent_id IS NULL
+    ''', (current_user.id,))
+    all_tasks = cur.fetchall()
     
     not_started = 0
     in_progress = 0
     done = 0
     
     for task in all_tasks:
-        subtasks = db.execute('SELECT * FROM tasks WHERE parent_id = ?', (task['id'],)).fetchall()
+        cur.execute('SELECT * FROM tasks WHERE parent_id = %s', (task['id'],))
+        subtasks = cur.fetchall()
         if subtasks:
             done_subs = sum(1 for st in subtasks if st['status'] == 'done')
             if done_subs == 0:
@@ -173,47 +148,45 @@ def api_get_stats(period):
     
     if period == 'hour':
         period_start = now - timedelta(hours=24)
-        format_str = '%H:00'
-        group_by = "strftime('%Y-%m-%d %H', completed_at)"
+        group_by = "TO_CHAR(completed_at, 'YYYY-MM-DD HH24')" 
     elif period == 'day':
         period_start = now - timedelta(days=7)
-        format_str = '%d.%m'
-        group_by = "DATE(completed_at)"
+        group_by = "TO_CHAR(completed_at, 'YYYY-MM-DD')"
     elif period == 'week':
         period_start = now - timedelta(weeks=12)
-        format_str = 'W%W'
-        group_by = "strftime('%Y-W%W', completed_at)"
+        group_by = "TO_CHAR(completed_at, 'IYYY-\"W\"IW')"
     elif period == 'month':
         period_start = now - timedelta(days=365)
-        format_str = '%b'
-        group_by = "strftime('%Y-%m', completed_at)"
+        group_by = "TO_CHAR(completed_at, 'YYYY-MM')"
     else:  # year
         period_start = now - timedelta(days=365*3)
-        format_str = '%Y'
-        group_by = "strftime('%Y', completed_at)"
+        group_by = "TO_CHAR(completed_at, 'YYYY')"
     
-    productivity_query = db.execute(f'''
+    cur.execute(f'''
         SELECT {group_by} as period, COUNT(*) as count
         FROM tasks
-        WHERE user_id = ? AND status = 'done' AND completed_at IS NOT NULL 
-              AND parent_id IS NULL AND completed_at >= ?
+        WHERE user_id = %s AND status = 'done' AND completed_at IS NOT NULL 
+              AND parent_id IS NULL AND completed_at >= %s
         GROUP BY {group_by}
         ORDER BY period ASC
-    ''', (current_user.id, period_start.isoformat())).fetchall()
+    ''', (current_user.id, period_start.isoformat()))
+    productivity_query = cur.fetchall()
     
     productivity = [{'period': row['period'], 'count': row['count']} for row in productivity_query]
     
-    top_periods_query = db.execute(f'''
+    cur.execute(f'''
         SELECT {group_by} as period, COUNT(*) as count
         FROM tasks
-        WHERE user_id = ? AND status = 'done' AND completed_at IS NOT NULL AND parent_id IS NULL
+        WHERE user_id = %s AND status = 'done' AND completed_at IS NOT NULL AND parent_id IS NULL
         GROUP BY {group_by}
         ORDER BY count DESC
         LIMIT 5
-    ''', (current_user.id,)).fetchall()
+    ''', (current_user.id,))
+    top_periods_query = cur.fetchall()
     
     top_periods = []
     for row in top_periods_query:
+        formatted = row['period']
         try:
             if period == 'day':
                 date_obj = datetime.strptime(row['period'], '%Y-%m-%d')
@@ -221,20 +194,20 @@ def api_get_stats(period):
             elif period == 'hour':
                 date_obj = datetime.strptime(row['period'], '%Y-%m-%d %H')
                 formatted = date_obj.strftime('%d.%m %H:00')
-            else:
-                formatted = row['period']
         except:
-            formatted = row['period']
+            pass
         top_periods.append({'period': formatted, 'count': row['count']})
     
-    priority_stats = db.execute('''
+    cur.execute('''
         SELECT priority, COUNT(*) as count
         FROM tasks
-        WHERE user_id = ? AND parent_id IS NULL
+        WHERE user_id = %s AND parent_id IS NULL
         GROUP BY priority
-    ''', (current_user.id,)).fetchall()
+    ''', (current_user.id,))
+    priority_stats = cur.fetchall()
     
     priorities = {row['priority']: row['count'] for row in priority_stats}
+    cur.close()
     
     return jsonify({
         'status': {
@@ -253,71 +226,86 @@ def api_get_stats(period):
 def api_add_task():
     db = get_db()
     data = request.json
+    cur = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
-    cursor = db.execute('''
+    cur.execute('''
         INSERT INTO tasks (title, description, priority, user_id, deadline, status)
-        VALUES (?, ?, ?, ?, ?, 'not_started')
+        VALUES (%s, %s, %s, %s, %s, 'not_started')
+        RETURNING id
     ''', (data.get('title'), data.get('description'), data.get('priority', 'medium'), 
           current_user.id, data.get('deadline')))
-    task_id = cursor.lastrowid
+    
+    task_id = cur.fetchone()['id']
     
     if data.get('subtasks'):
         for subtask in data['subtasks']:
             if subtask.strip():
-                db.execute('''
+                cur.execute('''
                     INSERT INTO tasks (title, user_id, parent_id, status)
-                    VALUES (?, ?, ?, 'not_started')
+                    VALUES (%s, %s, %s, 'not_started')
                 ''', (subtask, current_user.id, task_id))
     
     db.commit()
+    cur.close()
     return jsonify({'success': True, 'id': task_id})
 
 @app.route('/api/task/<int:id>', methods=['PUT'])
 @login_required
 def api_update_task(id):
     db = get_db()
-    task = db.execute('SELECT * FROM tasks WHERE id = ?', (id,)).fetchone()
+    cur = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    cur.execute('SELECT * FROM tasks WHERE id = %s', (id,))
+    task = cur.fetchone()
     
     if not task or task['user_id'] != current_user.id:
+        cur.close()
         return jsonify({'error': 'Access denied'}), 403
     
     data = request.json
     action = data.get('action')
     
     if action == 'toggle':
-        subtasks = db.execute('SELECT * FROM tasks WHERE parent_id = ?', (id,)).fetchall()
+        cur.execute('SELECT * FROM tasks WHERE parent_id = %s', (id,))
+        subtasks = cur.fetchall()
         
         new_status = 'not_started' if task['status'] == 'done' else 'done'
         completed_at = datetime.utcnow().isoformat() if new_status == 'done' else None
         
-        db.execute('UPDATE tasks SET status = ?, completed_at = ? WHERE id = ?', 
-                  (new_status, completed_at, id))
+        cur.execute('UPDATE tasks SET status = %s, completed_at = %s WHERE id = %s', 
+                   (new_status, completed_at, id))
         
         if subtasks:
             for subtask in subtasks:
-                db.execute('UPDATE tasks SET status = ?, completed_at = ? WHERE id = ?', 
-                          (new_status, completed_at, subtask['id']))
+                cur.execute('UPDATE tasks SET status = %s, completed_at = %s WHERE id = %s', 
+                           (new_status, completed_at, subtask['id']))
     
     elif action == 'toggle_subtask':
         new_status = 'not_started' if task['status'] == 'done' else 'done'
         completed_at = datetime.utcnow().isoformat() if new_status == 'done' else None
-        db.execute('UPDATE tasks SET status = ?, completed_at = ? WHERE id = ?', 
-                  (new_status, completed_at, id))
+        cur.execute('UPDATE tasks SET status = %s, completed_at = %s WHERE id = %s', 
+                   (new_status, completed_at, id))
     
     db.commit()
+    cur.close()
     return jsonify({'success': True})
 
 @app.route('/api/task/<int:id>', methods=['DELETE'])
 @login_required
 def api_delete_task(id):
     db = get_db()
-    task = db.execute('SELECT * FROM tasks WHERE id = ?', (id,)).fetchone()
+    cur = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    cur.execute('SELECT * FROM tasks WHERE id = %s', (id,))
+    task = cur.fetchone()
     
     if task and task['user_id'] == current_user.id:
-        db.execute('DELETE FROM tasks WHERE id = ? OR parent_id = ?', (id, id))
+        cur.execute('DELETE FROM tasks WHERE id = %s OR parent_id = %s', (id, id))
         db.commit()
+        cur.close()
         return jsonify({'success': True})
     
+    cur.close()
     return jsonify({'error': 'Access denied'}), 403
 
 @app.route('/set_lang/<language>')
@@ -347,7 +335,10 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        user_row = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        cur = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute('SELECT * FROM users WHERE username = %s', (username,))
+        user_row = cur.fetchone()
+        cur.close()
         
         if user_row and check_password_hash(user_row['password_hash'], password):
             user = User(user_row['id'], user_row['username'], user_row['password_hash'])
@@ -372,17 +363,27 @@ def register():
             flash('error_pass_short')
             return redirect(url_for('register'))
         
-        existing = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        cur = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute('SELECT * FROM users WHERE username = %s', (username,))
+        existing = cur.fetchone()
+        
         if existing:
+            cur.close()
             flash('error_user_exists')
             return redirect(url_for('register'))
         
         hashed_pw = generate_password_hash(password)
-        cursor = db.execute('INSERT INTO users (username, password_hash) VALUES (?, ?)',
-                           (username, hashed_pw))
-        db.commit()
+        cur.execute('''
+            INSERT INTO users (username, password_hash) 
+            VALUES (%s, %s)
+            RETURNING id
+        ''', (username, hashed_pw))
         
-        user = User(cursor.lastrowid, username, hashed_pw)
+        user_id = cur.fetchone()['id']
+        db.commit()
+        cur.close()
+        
+        user = User(user_id, username, hashed_pw)
         login_user(user)
         return redirect(url_for('index'))
     
