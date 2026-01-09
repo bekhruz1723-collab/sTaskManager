@@ -2,14 +2,7 @@ import multiprocessing
 import os
 import sys
 from pathlib import Path
-from database import db_handler
-try:
-    conn = db_handler.get_connection()
-    db_handler.init_db(conn)
-    db_handler.close(conn)
-    print("✓ База данных успешно инициализирована")
-except Exception as e:
-    print(f"Ошибка инициализации БД: {e}")
+
 
 def run_flask_app():
     from app import app, init_db
@@ -25,6 +18,15 @@ def run_telegram_bot():
     bot_main()
 
 def main():
+    try:
+        conn = db_handler.get_connection()
+        db_handler.init_db(conn)
+        db_handler.close(conn)
+        print("✓ База данных успешно инициализирована")
+    except Exception as e:
+        print(f"Ошибка инициализации БД: {e}")
+
+    print("Starting Task Manager Application...")
     print("Starting Task Manager Application...")
     print(f"Python version: {sys.version}")
     print(f"Working directory: {Path.cwd()}")
