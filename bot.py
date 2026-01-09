@@ -64,8 +64,12 @@ def create_user(username, password):
         db_handler.commit(db)
         db_handler.close(db)
         return user_id
-    except Exception:
-        cursor.close()
+    except Exception as e:
+        print(f"Error creating user: {e}")
+        try:
+            cursor.close()
+        except:
+            pass
         db_handler.close(db)
         return None
 
@@ -1011,10 +1015,10 @@ def main():
         entry_points=[CommandHandler('start', start)],
         states={
             LANGUAGE_SELECT: [
-                CallbackQueryHandler(language_selected, pattern='^lang_')
+                CallbackQueryHandler(language_selected, pattern=r'^lang_')
             ],
             AUTH_CHOICE: [
-                CallbackQueryHandler(auth_choice, pattern='^auth_')
+                CallbackQueryHandler(auth_choice, pattern=r'^auth_')
             ],
             LOGIN_USERNAME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, login_username)
@@ -1029,19 +1033,17 @@ def main():
                 MessageHandler(filters.TEXT & ~filters.COMMAND, register_password)
             ],
             MAIN_MENU: [
-                CallbackQueryHandler(menu_handler, pattern='^menu_'),
-                CallbackQueryHandler(task_page_handler, pattern='^tasks_page_'),
-                CallbackQueryHandler(task_detail_handler, pattern='^task_[0-9]+
-),
-                CallbackQueryHandler(toggle_task_handler, pattern='^toggle_[0-9]+
-),
-                CallbackQueryHandler(toggle_subtask_handler, pattern='^togglesub_'),
-                CallbackQueryHandler(delete_task_handler, pattern='^delete_'),
-                CallbackQueryHandler(confirm_delete_handler, pattern='^confirmdelete_'),
-                CallbackQueryHandler(show_stats, pattern='^stats_(day|week|month)'),
-                CallbackQueryHandler(settings_handler, pattern='^settings_'),
-                CallbackQueryHandler(set_language_handler, pattern='^setlang_'),
-                CallbackQueryHandler(logout_handler, pattern='^confirm_logout'),
+                CallbackQueryHandler(menu_handler, pattern=r'^menu_'),
+                CallbackQueryHandler(task_page_handler, pattern=r'^tasks_page_'),
+                CallbackQueryHandler(task_detail_handler, pattern=r'^task_\d+$'),
+                CallbackQueryHandler(toggle_task_handler, pattern=r'^toggle_\d+$'),
+                CallbackQueryHandler(toggle_subtask_handler, pattern=r'^togglesub_'),
+                CallbackQueryHandler(delete_task_handler, pattern=r'^delete_'),
+                CallbackQueryHandler(confirm_delete_handler, pattern=r'^confirmdelete_'),
+                CallbackQueryHandler(show_stats, pattern=r'^stats_(day|week|month)'),
+                CallbackQueryHandler(settings_handler, pattern=r'^settings_'),
+                CallbackQueryHandler(set_language_handler, pattern=r'^setlang_'),
+                CallbackQueryHandler(logout_handler, pattern=r'^confirm_logout'),
             ],
             ADD_TASK_TITLE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_title)
@@ -1050,13 +1052,13 @@ def main():
                 MessageHandler(filters.TEXT, add_task_description)
             ],
             ADD_TASK_PRIORITY: [
-                CallbackQueryHandler(add_task_priority, pattern='^priority_')
+                CallbackQueryHandler(add_task_priority, pattern=r'^priority_')
             ],
             ADD_TASK_DEADLINE: [
                 MessageHandler(filters.TEXT, add_task_deadline)
             ],
             ADD_TASK_SUBTASKS: [
-                CallbackQueryHandler(add_task_subtasks_choice, pattern='^subtasks_')
+                CallbackQueryHandler(add_task_subtasks_choice, pattern=r'^subtasks_')
             ],
             ADD_SUBTASK_INPUT: [
                 MessageHandler(filters.TEXT, add_subtask_input)
@@ -1071,7 +1073,8 @@ def main():
     
     application.add_handler(conv_handler)
     
-    print(f"Bot started successfully! (Using {db_handler.use_postgresql and 'PostgreSQL' or 'SQLite'})")
+    db_type = 'PostgreSQL' if db_handler.use_postgresql else 'SQLite'
+    print(f"Bot started successfully! (Using {db_type})")
     print("Press Ctrl+C to stop")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
