@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-DATABASE_URL = os.environ.get('postgres://koyeb-adm:npg_wWzuVoM3q5pB@ep-odd-hill-ag044kvz.c-2.eu-central-1.pg.koyeb.app/koyebdb', 'sqlite:///site.db')
+DATABASE_URL = os.environ.get('postgres://koyeb-adm:npg_wWzuVoM3q5pB@ep-odd-hill-ag044kvz.c-2.eu-central-1.pg.koyeb.app/koyebdb')
 USE_POSTGRESQL = DATABASE_URL.startswith('postgres://koyeb-adm:npg_wWzuVoM3q5pB@ep-odd-hill-ag044kvz.c-2.eu-central-1.pg.koyeb.app/koyebdb')
 
 print(f"[Database Config]")
