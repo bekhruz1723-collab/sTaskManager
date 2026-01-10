@@ -1,585 +1,731 @@
-{% extends 'base.html' %}
-
-{% block content %}
+{% extends 'base.html' %} {% block content %}
 <div class="modern-layout">
-    
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="sidebar-section">
-            <h3 class="sidebar-title">📊 {{ t('stats_title') }}</h3>
-            
-            <!-- Period Selector -->
-            <div class="period-selector">
-                <button class="period-btn active" data-period="day" onclick="changePeriod('day')">День</button>
-                <button class="period-btn" data-period="week" onclick="changePeriod('week')">Неделя</button>
-                <button class="period-btn" data-period="month" onclick="changePeriod('month')">Месяц</button>
-            </div>
-            
-            <!-- Main Stats -->
-            <div class="stats-grid">
-                <div class="stat-card" data-stat="total">
-                    <div class="stat-value" id="totalTasks">0</div>
-                    <div class="stat-label">Всего задач</div>
-                </div>
-                <div class="stat-card" data-stat="done">
-                    <div class="stat-value" id="doneTasks">0</div>
-                    <div class="stat-label">Выполнено</div>
-                </div>
-            </div>
-            
-            <!-- Status Chart -->
-            <div class="chart-wrapper">
-                <canvas id="statusChart"></canvas>
-            </div>
-            
-            <!-- Priority Chart -->
-            <div class="chart-wrapper">
-                <h4 class="chart-title">Приоритеты</h4>
-                <canvas id="priorityChart"></canvas>
-            </div>
-        </div>
-        
-        <!-- Top Productive Periods -->
-        <div class="sidebar-section">
-            <h3 class="sidebar-title">🏆 {{ t('top_days') }}</h3>
-            <div id="topPeriodsList" class="top-list">
-                <div class="loading">Загрузка...</div>
-            </div>
-        </div>
-        
-        <!-- Productivity Chart -->
-        <div class="sidebar-section">
-            <h3 class="sidebar-title">📈 {{ t('productivity_chart') }}</h3>
-            <div class="chart-wrapper">
-                <canvas id="productivityChart"></canvas>
-            </div>
-        </div>
-    </aside>
-    
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="content-header">
-            <h1 class="page-title">✨ {{ t('my_tasks') }}</h1>
-            <button class="add-task-trigger" onclick="toggleAddForm()">
-                <span class="add-icon">+</span>
-                <span>{{ t('add_task') }}</span>
-            </button>
-        </div>
-        
-        <!-- Add Task Form -->
-        <div class="add-task-panel" id="addTaskPanel" style="display: none;">
-            <form id="addTaskForm" class="task-form">
-                <div class="form-grid">
-                    <div class="form-group full-width">
-                        <input type="text" name="title" placeholder="Название задачи" required class="form-input">
-                    </div>
-                    
-                    <div class="form-group">
-                        <textarea name="description" placeholder="Описание (необязательно)" class="form-input form-textarea"></textarea>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Приоритет</label>
-                            <select name="priority" class="form-select">
-                                <option value="low">🟢 Низкий</option>
-                                <option value="medium" selected>🟡 Средний</option>
-                                <option value="high">🔴 Высокий</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Дедлайн</label>
-                            <input type="date" name="deadline" class="form-input">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group full-width">
-                        <button type="button" class="subtask-toggle" onclick="toggleSubtasks()">
-                            <span>+ Добавить подзадачи</span>
-                        </button>
-                        <div id="subtasksContainer" style="display: none;" class="subtasks-input">
-                            <div id="subtasksList">
-                                <input type="text" class="form-input subtask-input" placeholder="Подзадача 1">
-                                <input type="text" class="form-input subtask-input" placeholder="Подзадача 2">
-                            </div>
-                            <button type="button" class="btn-link" onclick="addSubtaskInput()">+ Еще подзадача</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">
-                        <span>✓ Создать задачу</span>
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="toggleAddForm()">
-                        <span>Отмена</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-        
-        <!-- Tasks List -->
-        <div class="tasks-container" id="tasksContainer">
-            <div class="loading-state">
-                <div class="spinner"></div>
-                <p>Загрузка задач...</p>
-            </div>
-        </div>
-    </main>
+	<!-- Sidebar -->
+	<aside class="sidebar">
+		<div class="sidebar-section">
+			<h3 class="sidebar-title">📊 {{ t('stats_title') }}</h3>
+
+			<!-- Period Selector -->
+			<div class="period-selector">
+				<button
+					class="period-btn active"
+					data-period="day"
+					onclick="changePeriod('day')"
+				>
+					{{ t('period_day') }}
+				</button>
+				<button
+					class="period-btn"
+					data-period="week"
+					onclick="changePeriod('week')"
+				>
+					{{ t('period_week') }}
+				</button>
+				<button
+					class="period-btn"
+					data-period="month"
+					onclick="changePeriod('month')"
+				>
+					{{ t('period_month') }}
+				</button>
+			</div>
+
+			<!-- Main Stats -->
+			<div class="stats-grid">
+				<div class="stat-card" data-stat="total">
+					<div class="stat-value" id="totalTasks">0</div>
+					<div class="stat-label">{{ t('total_tasks') }}</div>
+				</div>
+				<div class="stat-card" data-stat="done">
+					<div class="stat-value" id="doneTasks">0</div>
+					<div class="stat-label">{{ t('done_tasks') }}</div>
+				</div>
+			</div>
+
+			<!-- Status Chart -->
+			<div class="chart-wrapper">
+				<canvas id="statusChart"></canvas>
+			</div>
+
+			<!-- Priority Chart -->
+			<div class="chart-wrapper">
+				<h4 class="chart-title">{{ t('priorities_title') }}</h4>
+				<canvas id="priorityChart"></canvas>
+			</div>
+		</div>
+
+		<!-- Top Productive Periods -->
+		<div class="sidebar-section">
+			<h3 class="sidebar-title">🏆 {{ t('top_days') }}</h3>
+			<div id="topPeriodsList" class="top-list">
+				<div class="loading">{{ t('loading') }}</div>
+			</div>
+		</div>
+
+		<!-- Productivity Chart -->
+		<div class="sidebar-section">
+			<h3 class="sidebar-title">📈 {{ t('productivity_chart') }}</h3>
+			<div class="chart-wrapper">
+				<canvas id="productivityChart"></canvas>
+			</div>
+		</div>
+	</aside>
+
+	<!-- Main Content -->
+	<main class="main-content">
+		<div class="content-header">
+			<h1 class="page-title">✨ {{ t('my_tasks') }}</h1>
+			<button class="add-task-trigger" onclick="toggleAddForm()">
+				<span class="add-icon">+</span>
+				<span>{{ t('add_task') }}</span>
+			</button>
+		</div>
+
+		<!-- Add Task Form -->
+		<div class="add-task-panel" id="addTaskPanel" style="display: none">
+			<form id="addTaskForm" class="task-form">
+				<div class="form-grid">
+					<div class="form-group full-width">
+						<input
+							type="text"
+							name="title"
+							placeholder="{{ t('task_title_placeholder') }}"
+							required
+							class="form-input"
+						/>
+					</div>
+
+					<div class="form-group">
+						<textarea
+							name="description"
+							placeholder="{{ t('task_description_placeholder') }}"
+							class="form-input form-textarea"
+						></textarea>
+					</div>
+
+					<div class="form-row">
+						<div class="form-group">
+							<label class="form-label">{{ t('select_priority') }}</label>
+							<select name="priority" class="form-select">
+								<option value="low">🟢 {{ t('priority_low') }}</option>
+								<option value="medium" selected>
+									🟡 {{ t('priority_medium') }}
+								</option>
+								<option value="high">🔴 {{ t('priority_high') }}</option>
+							</select>
+						</div>
+
+						<div class="form-group">
+							<label class="form-label">{{ t('select_deadline') }}</label>
+							<input type="date" name="deadline" class="form-input" />
+						</div>
+					</div>
+
+					<div class="form-group full-width">
+						<button
+							type="button"
+							class="subtask-toggle"
+							onclick="toggleSubtasks()"
+						>
+							<span>{{ t('add_subtasks_btn') }}</span>
+						</button>
+						<div
+							id="subtasksContainer"
+							style="display: none"
+							class="subtasks-input"
+						>
+							<div id="subtasksList">
+								<input
+									type="text"
+									class="form-input subtask-input"
+									placeholder="{{ t('subtask_1') }}"
+								/>
+								<input
+									type="text"
+									class="form-input subtask-input"
+									placeholder="{{ t('subtask_2') }}"
+								/>
+							</div>
+							<button
+								type="button"
+								class="btn-link"
+								onclick="addSubtaskInput()"
+							>
+								{{ t('another_subtask') }}
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="form-actions">
+					<button type="submit" class="btn btn-primary">
+						<span>{{ t('create_task_btn') }}</span>
+					</button>
+					<button
+						type="button"
+						class="btn btn-secondary"
+						onclick="toggleAddForm()"
+					>
+						<span>{{ t('cancel_btn') }}</span>
+					</button>
+				</div>
+			</form>
+		</div>
+
+		<!-- Tasks List -->
+		<div class="tasks-container" id="tasksContainer">
+			<div class="loading-state">
+				<div class="spinner"></div>
+				<p>{{ t('loading_tasks') }}</p>
+			</div>
+		</div>
+	</main>
 </div>
 
 <script>
-let currentPeriod = 'day';
-let charts = {};
+	// Переводы для JavaScript
+	const i18n = {
+		notStarted: "{{ t('not_started_label') }}",
+		inProgress: "{{ t('in_progress_label') }}",
+		completed: "{{ t('completed_label') }}",
+		priorityLow: "{{ t('priority_low') }}",
+		priorityMedium: "{{ t('priority_medium') }}",
+		priorityHigh: "{{ t('priority_high') }}",
+		tasksCount: "{{ t('tasks_count') }}",
+		noTasksYet: "{{ t('no_tasks_yet') }}",
+		createFirstTask: "{{ t('create_first_task') }}",
+		deleteConfirm: "{{ t('delete_task_confirm') }}",
+		noData: "{{ t('no_data') }}",
+		completedTasks: "{{ t('bot_completed_tasks') }}",
+		subtaskN: "{{ t('subtask_n') }}",
+	};
 
-// Инициализация
-document.addEventListener('DOMContentLoaded', () => {
-    loadTasks();
-    loadStats(currentPeriod);
-    setupFormHandler();
-});
+	let currentPeriod = "day";
+	let charts = {};
 
-// Загрузка задач
-async function loadTasks() {
-    try {
-        const response = await fetch('/api/tasks');
-        const tasks = await response.json();
-        renderTasks(tasks);
-    } catch (error) {
-        console.error('Error loading tasks:', error);
-    }
-}
+	// Инициализация
+	document.addEventListener("DOMContentLoaded", () => {
+		loadTasks();
+		loadStats(currentPeriod);
+		setupFormHandler();
+	});
 
-// Отображение задач
-function renderTasks(tasks) {
-    const container = document.getElementById('tasksContainer');
-    
-    if (tasks.length === 0) {
-        container.innerHTML = `
+	// Загрузка задач
+	async function loadTasks() {
+		try {
+			const response = await fetch("/api/tasks");
+			const tasks = await response.json();
+			renderTasks(tasks);
+		} catch (error) {
+			console.error("Error loading tasks:", error);
+		}
+	}
+
+	// Отображение задач
+	function renderTasks(tasks) {
+		const container = document.getElementById("tasksContainer");
+
+		if (tasks.length === 0) {
+			container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">📋</div>
-                <p>Пока нет задач</p>
-                <button class="btn btn-primary" onclick="toggleAddForm()">Создать первую задачу</button>
+                <p>${i18n.noTasksYet}</p>
+                <button class="btn btn-primary" onclick="toggleAddForm()">${i18n.createFirstTask}</button>
             </div>
         `;
-        return;
-    }
-    
-    container.innerHTML = tasks.map(task => `
-        <div class="task-card ${task.computed_status}" data-task-id="${task.id}">
+			return;
+		}
+
+		container.innerHTML = tasks
+			.map(
+				(task) => `
+        <div class="task-card ${task.computed_status}" data-task-id="${
+					task.id
+				}">
             <div class="task-card-header">
                 <input type="checkbox" class="task-checkbox" 
-                       ${task.computed_status === 'done' ? 'checked' : ''}
+                       ${task.computed_status === "done" ? "checked" : ""}
                        onchange="toggleTask(${task.id})">
                 <div class="task-info">
                     <h3 class="task-title">${task.title}</h3>
-                    ${task.description ? `<p class="task-description">${task.description}</p>` : ''}
+                    ${
+											task.description
+												? `<p class="task-description">${task.description}</p>`
+												: ""
+										}
                     <div class="task-meta">
                         <span class="meta-item">
                             <span class="meta-icon">📅</span>
                             <span>${formatDate(task.created_at)}</span>
                         </span>
-                        ${task.deadline ? `
+                        ${
+													task.deadline
+														? `
                             <span class="meta-item">
                                 <span class="meta-icon">⏰</span>
                                 <span>${task.deadline}</span>
                             </span>
-                        ` : ''}
-                        <span class="priority-badge priority-${task.priority || 'medium'}">
-                            ${getPriorityLabel(task.priority || 'medium')}
+                        `
+														: ""
+												}
+                        <span class="priority-badge priority-${
+													task.priority || "medium"
+												}">
+                            ${getPriorityLabel(task.priority || "medium")}
                         </span>
                     </div>
                 </div>
-                <button class="task-delete" onclick="deleteTask(${task.id})" title="Удалить">
+                <button class="task-delete" onclick="deleteTask(${
+									task.id
+								})" title="${i18n.deleteConfirm}">
                     <span>×</span>
                 </button>
             </div>
             
-            ${task.subtasks && task.subtasks.length > 0 ? `
+            ${
+							task.subtasks && task.subtasks.length > 0
+								? `
                 <div class="subtasks-section">
                     <div class="subtasks-progress">
                         <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${getProgressPercent(task.subtasks)}%"></div>
+                            <div class="progress-fill" style="width: ${getProgressPercent(
+															task.subtasks
+														)}%"></div>
                         </div>
-                        <span class="progress-text">${getCompletedCount(task.subtasks)}/${task.subtasks.length}</span>
+                        <span class="progress-text">${getCompletedCount(
+													task.subtasks
+												)}/${task.subtasks.length}</span>
                     </div>
                     <div class="subtasks-list">
-                        ${task.subtasks.map(sub => `
-                            <div class="subtask-item ${sub.status === 'done' ? 'completed' : ''}">
-                                <input type="checkbox" ${sub.status === 'done' ? 'checked' : ''}
+                        ${task.subtasks
+													.map(
+														(sub) => `
+                            <div class="subtask-item ${
+															sub.status === "done" ? "completed" : ""
+														}">
+                                <input type="checkbox" ${
+																	sub.status === "done" ? "checked" : ""
+																}
                                        onchange="toggleSubtask(${sub.id})">
                                 <span>${sub.title}</span>
                             </div>
-                        `).join('')}
+                        `
+													)
+													.join("")}
                     </div>
                 </div>
-            ` : ''}
+            `
+								: ""
+						}
         </div>
-    `).join('');
-}
+    `
+			)
+			.join("");
+	}
 
-// Загрузка статистики
-async function loadStats(period) {
-    try {
-        const response = await fetch(`/api/stats/${period}`);
-        const data = await response.json();
-        updateStats(data);
-    } catch (error) {
-        console.error('Error loading stats:', error);
-    }
-}
+	// Загрузка статистики
+	async function loadStats(period) {
+		try {
+			const response = await fetch(`/api/stats/${period}`);
+			const data = await response.json();
+			updateStats(data);
+		} catch (error) {
+			console.error("Error loading stats:", error);
+		}
+	}
 
-// Обновление статистики
-function updateStats(data) {
-    // Обновляем числа с анимацией
-    animateValue('totalTasks', data.total);
-    animateValue('doneTasks', data.status.done);
-    
-    // Обновляем графики
-    updateStatusChart(data.status);
-    updatePriorityChart(data.priorities);
-    updateProductivityChart(data.productivity);
-    updateTopPeriods(data.top_periods);
-}
+	// Обновление статистики
+	function updateStats(data) {
+		// Обновляем числа с анимацией
+		animateValue("totalTasks", data.total);
+		animateValue("doneTasks", data.status.done);
 
-// Анимация чисел (исправлена - без прыжков)
-function animateValue(id, end, duration = 500) {
-    const element = document.getElementById(id);
-    const start = parseInt(element.textContent) || 0;
-    
-    if (start === end) return; // Если значение не изменилось, не анимируем
-    
-    const range = end - start;
-    const increment = range / (duration / 16);
-    let current = start;
-    
-    const timer = setInterval(() => {
-        current += increment;
-        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
-            current = end;
-            clearInterval(timer);
-        }
-        element.textContent = Math.round(current);
-    }, 16);
-}
+		// Обновляем графики
+		updateStatusChart(data.status);
+		updatePriorityChart(data.priorities);
+		updateProductivityChart(data.productivity);
+		updateTopPeriods(data.top_periods);
+	}
 
-// График статусов
-function updateStatusChart(status) {
-    const ctx = document.getElementById('statusChart').getContext('2d');
-    
-    if (charts.status) {
-        charts.status.data.datasets[0].data = [status.not_started, status.in_progress, status.done];
-        charts.status.update('active');
-    } else {
-        charts.status = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Не начато', 'В процессе', 'Завершено'],
-                datasets: [{
-                    data: [status.not_started, status.in_progress, status.done],
-                    backgroundColor: [
-                        'rgba(239, 68, 68, 0.8)',
-                        'rgba(251, 191, 36, 0.8)',
-                        'rgba(34, 197, 94, 0.8)'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: getComputedStyle(document.body).getPropertyValue('--text-primary'),
-                            padding: 10,
-                            font: { size: 11 }
-                        }
-                    }
-                },
-                animation: {
-                    animateScale: true,
-                    animateRotate: true
-                }
-            }
-        });
-    }
-}
+	// Анимация чисел (исправлена - без прыжков)
+	function animateValue(id, end, duration = 500) {
+		const element = document.getElementById(id);
+		const start = parseInt(element.textContent) || 0;
 
-// График приоритетов
-function updatePriorityChart(priorities) {
-    const ctx = document.getElementById('priorityChart').getContext('2d');
-    
-    const data = {
-        low: priorities.low || 0,
-        medium: priorities.medium || 0,
-        high: priorities.high || 0
-    };
-    
-    if (charts.priority) {
-        charts.priority.data.datasets[0].data = [data.low, data.medium, data.high];
-        charts.priority.update('active');
-    } else {
-        charts.priority = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Низкий', 'Средний', 'Высокий'],
-                datasets: [{
-                    data: [data.low, data.medium, data.high],
-                    backgroundColor: [
-                        'rgba(34, 197, 94, 0.6)',
-                        'rgba(251, 191, 36, 0.6)',
-                        'rgba(239, 68, 68, 0.6)'
-                    ],
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            color: getComputedStyle(document.body).getPropertyValue('--text-secondary'),
-                            stepSize: 1,
-                            font: { size: 10 }
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            color: getComputedStyle(document.body).getPropertyValue('--text-secondary'),
-                            font: { size: 10 },
-                            maxRotation: 0,
-                            minRotation: 0
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-    }
-}
+		if (start === end) return;
 
-// График продуктивности
-function updateProductivityChart(productivity) {
-    const ctx = document.getElementById('productivityChart').getContext('2d');
-    
-    const labels = productivity.map(p => p.period);
-    const data = productivity.map(p => p.count);
-    
-    if (charts.productivity) {
-        charts.productivity.data.labels = labels;
-        charts.productivity.data.datasets[0].data = data;
-        charts.productivity.update('active');
-    } else {
-        charts.productivity = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Выполнено задач',
-                    data: data,
-                    borderColor: 'rgba(96, 165, 250, 1)',
-                    backgroundColor: 'rgba(96, 165, 250, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            color: getComputedStyle(document.body).getPropertyValue('--text-secondary'),
-                            stepSize: 1
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            color: getComputedStyle(document.body).getPropertyValue('--text-secondary')
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-    }
-}
+		const range = end - start;
+		const increment = range / (duration / 16);
+		let current = start;
 
-// Топ периодов
-function updateTopPeriods(periods) {
-    const container = document.getElementById('topPeriodsList');
-    
-    if (periods.length === 0) {
-        container.innerHTML = '<div class="empty-message">Нет данных</div>';
-        return;
-    }
-    
-    container.innerHTML = periods.map((p, i) => `
+		const timer = setInterval(() => {
+			current += increment;
+			if (
+				(increment > 0 && current >= end) ||
+				(increment < 0 && current <= end)
+			) {
+				current = end;
+				clearInterval(timer);
+			}
+			element.textContent = Math.round(current);
+		}, 16);
+	}
+
+	// График статусов
+	function updateStatusChart(status) {
+		const ctx = document.getElementById("statusChart").getContext("2d");
+
+		if (charts.status) {
+			charts.status.data.datasets[0].data = [
+				status.not_started,
+				status.in_progress,
+				status.done,
+			];
+			charts.status.update("active");
+		} else {
+			charts.status = new Chart(ctx, {
+				type: "doughnut",
+				data: {
+					labels: [i18n.notStarted, i18n.inProgress, i18n.completed],
+					datasets: [
+						{
+							data: [status.not_started, status.in_progress, status.done],
+							backgroundColor: [
+								"rgba(239, 68, 68, 0.8)",
+								"rgba(251, 191, 36, 0.8)",
+								"rgba(34, 197, 94, 0.8)",
+							],
+							borderWidth: 0,
+						},
+					],
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: {
+							position: "bottom",
+							labels: {
+								color: getComputedStyle(document.body).getPropertyValue(
+									"--text-primary"
+								),
+								padding: 10,
+								font: { size: 11 },
+							},
+						},
+					},
+					animation: {
+						animateScale: true,
+						animateRotate: true,
+					},
+				},
+			});
+		}
+	}
+
+	// График приоритетов
+	function updatePriorityChart(priorities) {
+		const ctx = document.getElementById("priorityChart").getContext("2d");
+
+		const data = {
+			low: priorities.low || 0,
+			medium: priorities.medium || 0,
+			high: priorities.high || 0,
+		};
+
+		if (charts.priority) {
+			charts.priority.data.datasets[0].data = [
+				data.low,
+				data.medium,
+				data.high,
+			];
+			charts.priority.update("active");
+		} else {
+			charts.priority = new Chart(ctx, {
+				type: "bar",
+				data: {
+					labels: [i18n.priorityLow, i18n.priorityMedium, i18n.priorityHigh],
+					datasets: [
+						{
+							data: [data.low, data.medium, data.high],
+							backgroundColor: [
+								"rgba(34, 197, 94, 0.6)",
+								"rgba(251, 191, 36, 0.6)",
+								"rgba(239, 68, 68, 0.6)",
+							],
+							borderRadius: 8,
+						},
+					],
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { display: false },
+					},
+					scales: {
+						y: {
+							beginAtZero: true,
+							ticks: {
+								color: getComputedStyle(document.body).getPropertyValue(
+									"--text-secondary"
+								),
+								stepSize: 1,
+								font: { size: 10 },
+							},
+							grid: {
+								color: "rgba(255, 255, 255, 0.05)",
+							},
+						},
+						x: {
+							ticks: {
+								color: getComputedStyle(document.body).getPropertyValue(
+									"--text-secondary"
+								),
+								font: { size: 10 },
+								maxRotation: 0,
+								minRotation: 0,
+							},
+							grid: {
+								display: false,
+							},
+						},
+					},
+				},
+			});
+		}
+	}
+
+	// График продуктивности
+	function updateProductivityChart(productivity) {
+		const ctx = document.getElementById("productivityChart").getContext("2d");
+
+		const labels = productivity.map((p) => p.period);
+		const data = productivity.map((p) => p.count);
+
+		if (charts.productivity) {
+			charts.productivity.data.labels = labels;
+			charts.productivity.data.datasets[0].data = data;
+			charts.productivity.update("active");
+		} else {
+			charts.productivity = new Chart(ctx, {
+				type: "line",
+				data: {
+					labels: labels,
+					datasets: [
+						{
+							label: i18n.completedTasks,
+							data: data,
+							borderColor: "rgba(96, 165, 250, 1)",
+							backgroundColor: "rgba(96, 165, 250, 0.1)",
+							fill: true,
+							tension: 0.4,
+							pointRadius: 4,
+							pointHoverRadius: 6,
+						},
+					],
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { display: false },
+					},
+					scales: {
+						y: {
+							beginAtZero: true,
+							ticks: {
+								color: getComputedStyle(document.body).getPropertyValue(
+									"--text-secondary"
+								),
+								stepSize: 1,
+							},
+							grid: {
+								color: "rgba(255, 255, 255, 0.05)",
+							},
+						},
+						x: {
+							ticks: {
+								color: getComputedStyle(document.body).getPropertyValue(
+									"--text-secondary"
+								),
+							},
+							grid: {
+								display: false,
+							},
+						},
+					},
+				},
+			});
+		}
+	}
+
+	// Топ периодов
+	function updateTopPeriods(periods) {
+		const container = document.getElementById("topPeriodsList");
+
+		if (periods.length === 0) {
+			container.innerHTML = `<div class="empty-message">${i18n.noData}</div>`;
+			return;
+		}
+
+		container.innerHTML = periods
+			.map(
+				(p, i) => `
         <div class="top-item">
             <span class="top-rank">${i + 1}</span>
             <span class="top-period">${p.period}</span>
-            <span class="top-count">${p.count} задач</span>
+            <span class="top-count">${p.count} ${i18n.tasksCount}</span>
         </div>
-    `).join('');
-}
+    `
+			)
+			.join("");
+	}
 
-// Смена периода
-function changePeriod(period) {
-    currentPeriod = period;
-    
-    document.querySelectorAll('.period-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.period === period);
-    });
-    
-    loadStats(period);
-}
+	// Смена периода
+	function changePeriod(period) {
+		currentPeriod = period;
 
-// Переключение формы
-function toggleAddForm() {
-    const panel = document.getElementById('addTaskPanel');
-    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
+		document.querySelectorAll(".period-btn").forEach((btn) => {
+			btn.classList.toggle("active", btn.dataset.period === period);
+		});
 
-// Переключение подзадач
-function toggleSubtasks() {
-    const container = document.getElementById('subtasksContainer');
-    container.style.display = container.style.display === 'none' ? 'block' : 'none';
-}
+		loadStats(period);
+	}
 
-// Добавить поле подзадачи
-let subtaskCount = 3;
-function addSubtaskInput() {
-    const list = document.getElementById('subtasksList');
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-input subtask-input';
-    input.placeholder = `Подзадача ${subtaskCount}`;
-    list.appendChild(input);
-    subtaskCount++;
-}
+	// Переключение формы
+	function toggleAddForm() {
+		const panel = document.getElementById("addTaskPanel");
+		panel.style.display = panel.style.display === "none" ? "block" : "none";
+	}
 
-// Обработка формы
-function setupFormHandler() {
-    document.getElementById('addTaskForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const formData = new FormData(e.target);
-        const subtasks = Array.from(document.querySelectorAll('.subtask-input'))
-            .map(input => input.value.trim())
-            .filter(val => val);
-        
-        const data = {
-            title: formData.get('title'),
-            description: formData.get('description'),
-            priority: formData.get('priority'),
-            deadline: formData.get('deadline') || null,
-            subtasks: subtasks
-        };
-        
-        try {
-            const response = await fetch('/api/task', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            
-            if (response.ok) {
-                e.target.reset();
-                toggleAddForm();
-                await loadTasks();
-                await loadStats(currentPeriod);
-            }
-        } catch (error) {
-            console.error('Error adding task:', error);
-        }
-    });
-}
+	// Переключение подзадач
+	function toggleSubtasks() {
+		const container = document.getElementById("subtasksContainer");
+		container.style.display =
+			container.style.display === "none" ? "block" : "none";
+	}
 
-// Переключить задачу
-async function toggleTask(id) {
-    try {
-        await fetch(`/api/task/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'toggle' })
-        });
-        await loadTasks();
-        await loadStats(currentPeriod);
-    } catch (error) {
-        console.error('Error toggling task:', error);
-    }
-}
+	// Добавить поле подзадачи
+	let subtaskCount = 3;
+	function addSubtaskInput() {
+		const list = document.getElementById("subtasksList");
+		const input = document.createElement("input");
+		input.type = "text";
+		input.className = "form-input subtask-input";
+		input.placeholder = `${i18n.subtaskN} ${subtaskCount}`;
+		list.appendChild(input);
+		subtaskCount++;
+	}
 
-// Переключить подзадачу
-async function toggleSubtask(id) {
-    try {
-        await fetch(`/api/task/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'toggle_subtask' })
-        });
-        await loadTasks();
-        await loadStats(currentPeriod);
-    } catch (error) {
-        console.error('Error toggling subtask:', error);
-    }
-}
+	// Обработка формы
+	function setupFormHandler() {
+		document
+			.getElementById("addTaskForm")
+			.addEventListener("submit", async (e) => {
+				e.preventDefault();
 
-// Удалить задачу
-async function deleteTask(id) {
-    if (!confirm('Удалить эту задачу?')) return;
-    
-    try {
-        await fetch(`/api/task/${id}`, { method: 'DELETE' });
-        await loadTasks();
-        await loadStats(currentPeriod);
-    } catch (error) {
-        console.error('Error deleting task:', error);
-    }
-}
+				const formData = new FormData(e.target);
+				const subtasks = Array.from(document.querySelectorAll(".subtask-input"))
+					.map((input) => input.value.trim())
+					.filter((val) => val);
 
-// Утилиты
-function formatDate(dateStr) {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
+				const data = {
+					title: formData.get("title"),
+					description: formData.get("description"),
+					priority: formData.get("priority"),
+					deadline: formData.get("deadline") || null,
+					subtasks: subtasks,
+				};
 
-function getPriorityLabel(priority) {
-    const labels = { low: '🟢 Низкий', medium: '🟡 Средний', high: '🔴 Высокий' };
-    return labels[priority] || labels.medium;
-}
+				try {
+					const response = await fetch("/api/task", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(data),
+					});
 
-function getProgressPercent(subtasks) {
-    const completed = subtasks.filter(s => s.status === 'done').length;
-    return (completed / subtasks.length * 100).toFixed(0);
-}
+					if (response.ok) {
+						e.target.reset();
+						toggleAddForm();
+						await loadTasks();
+						await loadStats(currentPeriod);
+					}
+				} catch (error) {
+					console.error("Error adding task:", error);
+				}
+			});
+	}
 
-function getCompletedCount(subtasks) {
-    return subtasks.filter(s => s.status === 'done').length;
-}
+	// Переключить задачу
+	async function toggleTask(id) {
+		try {
+			await fetch(`/api/task/${id}`, {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ action: "toggle" }),
+			});
+			await loadTasks();
+			await loadStats(currentPeriod);
+		} catch (error) {
+			console.error("Error toggling task:", error);
+		}
+	}
+
+	// Переключить подзадачу
+	async function toggleSubtask(id) {
+		try {
+			await fetch(`/api/task/${id}`, {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ action: "toggle_subtask" }),
+			});
+			await loadTasks();
+			await loadStats(currentPeriod);
+		} catch (error) {
+			console.error("Error toggling subtask:", error);
+		}
+	}
+
+	// Удалить задачу
+	async function deleteTask(id) {
+		if (!confirm(i18n.deleteConfirm)) return;
+
+		try {
+			await fetch(`/api/task/${id}`, { method: "DELETE" });
+			await loadTasks();
+			await loadStats(currentPeriod);
+		} catch (error) {
+			console.error("Error deleting task:", error);
+		}
+	}
+
+	// Утилиты
+	function formatDate(dateStr) {
+		const date = new Date(dateStr);
+		return date.toLocaleDateString("{{ lang }}", {
+			day: "2-digit",
+			month: "2-digit",
+			year: "numeric",
+		});
+	}
+
+	function getPriorityLabel(priority) {
+		const labels = {
+			low: `🟢 ${i18n.priorityLow}`,
+			medium: `🟡 ${i18n.priorityMedium}`,
+			high: `🔴 ${i18n.priorityHigh}`,
+		};
+		return labels[priority] || labels.medium;
+	}
+
+	function getProgressPercent(subtasks) {
+		const completed = subtasks.filter((s) => s.status === "done").length;
+		return ((completed / subtasks.length) * 100).toFixed(0);
+	}
+
+	function getCompletedCount(subtasks) {
+		return subtasks.filter((s) => s.status === "done").length;
+	}
 </script>
 {% endblock %}

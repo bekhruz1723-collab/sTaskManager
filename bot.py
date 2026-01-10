@@ -334,7 +334,7 @@ def get_stats(user_id, period):
 
 def format_stats_text(stats, lang, period):
     text = f"📊 *{t(lang, 'stats_title')}*\n"
-    text += f"🔹 {t(lang, f'bot_period_{period}')}\n\n"
+    text += f"📹 {t(lang, f'bot_period_{period}')}\n\n"
     
     text += f"📈 *{t(lang, 'stats_title')}:*\n"
     text += f"📋 {t(lang, 'bot_total_tasks')}: *{stats['total']}*\n"
@@ -552,13 +552,16 @@ async def show_tasks(update: Update, context: ContextTypes.DEFAULT_TYPE, page=0)
     end_idx = start_idx + tasks_per_page
     page_tasks = tasks[start_idx:end_idx]
     
-    text = f"📝 {t(lang, 'bot_my_tasks')}\n\n"
+    text = f"📋 {t(lang, 'bot_my_tasks')}\n\n"
     
     keyboard = []
     for task in page_tasks:
         status_emoji = "✅" if task['computed_status'] == 'done' else "⏳" if task['computed_status'] == 'in_progress' else "📋"
         task_priority = task.get('priority', 'medium')
         priority_emoji = "🟢" if task_priority == 'low' else "🟡" if task_priority == 'medium' else "🔴"
+        
+        # Используем локализованные метки приоритетов
+        priority_text = t(lang, f'priority_{task_priority}')
         
         text += f"{status_emoji} {priority_emoji} *{task['title']}*\n"
         if task.get('description'):
@@ -995,7 +998,7 @@ async def logout_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await query.answer(t(lang, 'bot_logout'))
     await query.edit_message_text(
-        t(lang, 'bot_select_language'),
+        "🌐 Choose language / Выберите язык / Tilni tanlang:",
         reply_markup=reply_markup
     )
     
