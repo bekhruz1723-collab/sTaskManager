@@ -367,12 +367,13 @@ def format_stats_text(stats, lang, period):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🇬🇧 EN", callback_data="lang_en"),
-         InlineKeyboardButton("🇷🇺 RU", callback_data="lang_ru")]
+         InlineKeyboardButton("🇷🇺 RU", callback_data="lang_ru"),
+         InlineKeyboardButton("🇺🇿 UZ", callback_data="lang_uz")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
-        "🌐 Choose language / Выберите язык:",
+        "🌐 Choose language / Выберите язык / Tilni tanlang:",
         reply_markup=reply_markup
     )
     
@@ -942,7 +943,8 @@ async def settings_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if action == 'language':
         keyboard = [
             [InlineKeyboardButton("🇬🇧 EN", callback_data="setlang_en"),
-             InlineKeyboardButton("🇷🇺 RU", callback_data="setlang_ru")],
+             InlineKeyboardButton("🇷🇺 RU", callback_data="setlang_ru"),
+             InlineKeyboardButton("🇺🇿 UZ", callback_data="setlang_uz")],
             [InlineKeyboardButton(t(lang, 'bot_back'), callback_data="menu_settings")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -986,7 +988,8 @@ async def logout_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     keyboard = [
         [InlineKeyboardButton("🇬🇧 EN", callback_data="lang_en"),
-         InlineKeyboardButton("🇷🇺 RU", callback_data="lang_ru")]
+         InlineKeyboardButton("🇷🇺 RU", callback_data="lang_ru"),
+         InlineKeyboardButton("🇺🇿 UZ", callback_data="lang_uz")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     

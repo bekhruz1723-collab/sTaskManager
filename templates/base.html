@@ -53,17 +53,92 @@
 					Task Manager
 				</a>
 				<div class="nav-links">
-					<a
-						href="{{ url_for('set_lang', language='en') }}"
-						class="{{ 'active' if lang == 'en' else '' }}"
-						>EN</a
-					>
-					<span style="color: var(--text-tertiary)">|</span>
-					<a
-						href="{{ url_for('set_lang', language='ru') }}"
-						class="{{ 'active' if lang == 'ru' else '' }}"
-						>RU</a
-					>
+					<!-- Language Dropdown -->
+					<div class="lang-dropdown">
+						<button class="lang-btn" id="langBtn">
+							{% if lang == 'ru' %}RU {% elif lang == 'en' %}EN {% else %}UZ{%
+							endif %}
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								style="margin-left: 4px"
+							>
+								<polyline points="6 9 12 15 18 9"></polyline>
+							</svg>
+						</button>
+						<div class="lang-dropdown-menu" id="langMenu">
+							<a
+								href="{{ url_for('set_lang', language='ru') }}"
+								class="lang-dropdown-item"
+							>
+								<span>Русский</span>
+								{% if lang == 'ru' %}
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="18"
+									height="18"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<polyline points="20 6 9 17 4 12"></polyline>
+								</svg>
+								{% endif %}
+							</a>
+							<a
+								href="{{ url_for('set_lang', language='en') }}"
+								class="lang-dropdown-item"
+							>
+								<span>English</span>
+								{% if lang == 'en' %}
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="18"
+									height="18"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<polyline points="20 6 9 17 4 12"></polyline>
+								</svg>
+								{% endif %}
+							</a>
+							<a
+								href="{{ url_for('set_lang', language='uz') }}"
+								class="lang-dropdown-item"
+							>
+								<span>O'zbek</span>
+								{% if lang == 'uz' %}
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="18"
+									height="18"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<polyline points="20 6 9 17 4 12"></polyline>
+								</svg>
+								{% endif %}
+							</a>
+						</div>
+					</div>
 
 					{% if current_user.is_authenticated %}
 					<span
@@ -145,6 +220,24 @@
 					navIcon.src = iconPath;
 				}
 			});
+
+			// Language dropdown
+			const langBtn = document.getElementById("langBtn");
+			const langMenu = document.getElementById("langMenu");
+
+			if (langBtn && langMenu) {
+				langBtn.addEventListener("click", function (e) {
+					e.stopPropagation();
+					langMenu.classList.toggle("show");
+				});
+
+				// Close dropdown when clicking outside
+				document.addEventListener("click", function (e) {
+					if (!langBtn.contains(e.target) && !langMenu.contains(e.target)) {
+						langMenu.classList.remove("show");
+					}
+				});
+			}
 		</script>
 	</body>
 </html>

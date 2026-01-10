@@ -310,7 +310,7 @@ def api_delete_task(id):
 
 @app.route('/set_lang/<language>')
 def set_lang(language):
-    if language in ['ru', 'en']:
+    if language in ['ru', 'en', 'uz']: 
         session['lang'] = language
     return redirect(request.referrer or url_for('index'))
 
