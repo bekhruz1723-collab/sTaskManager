@@ -21,7 +21,7 @@ from telegram.ext import (
     filters,
 )
 
-BOT_TOKEN = os.environ.get('BOT_TOKEN', '8229500674:AAGWvQ6YoB1jYqOUgo5rKfMCSJ6KeyF3c-E')
+BOT_TOKEN = os.environ.get('BOT_TOKEN')
 
 LANGUAGE_SELECT, AUTH_CHOICE, LOGIN_USERNAME, LOGIN_PASSWORD = range(4)
 REGISTER_USERNAME, REGISTER_PASSWORD = range(4, 6)
